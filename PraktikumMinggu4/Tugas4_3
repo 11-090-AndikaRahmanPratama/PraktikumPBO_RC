@@ -1,0 +1,102 @@
+from abc import ABC, abstractmethod
+
+# Abstraksi dan Pewarisan
+class Hewan(ABC):
+    def __init__(self, nama, umur):
+        if not nama or not isinstance(nama, str):
+            raise ValueError("Error: Nama harus berupa string yang valid.")
+        if umur <= 0:
+            raise ValueError("Error: Umur harus lebih besar dari nol.")
+        self.__nama = nama
+        self.__umur = umur
+
+    def ambil_nama(self):
+        return self.__nama
+
+    def ambil_umur(self):
+        return self.__umur
+
+    @abstractmethod
+    def suara(self):
+        pass
+
+    @abstractmethod
+    def makan(self):
+        pass
+
+class Singa(Hewan):
+    def suara(self):
+        return "Roarrr"
+
+    def makan(self):
+        return "Daging."
+
+class Harimau(Hewan):
+    def suara(self):
+        return "Rawrrr"
+
+    def makan(self):
+        return "Daging."
+
+class KebunBinatang:
+    def __init__(self):
+        self.hewan = []
+
+    def tambah_hewan(self, hewan):
+        if isinstance(hewan, Hewan):
+            self.hewan.append(hewan)
+        else:
+            raise ValueError("Error: Objek bukan hewan yang valid.")
+
+    def tampilkan_hewan(self):
+        if not self.hewan:
+            print("Kebun binatang kosong.")
+        else:
+            for hewan in self.hewan:
+                print(f"{hewan.ambil_nama()} ({hewan.ambil_umur()} tahun): Suara - {hewan.suara()}, Makanan - {hewan.makan()}")
+
+def utama():
+    kebun_binatang = KebunBinatang()
+    while True:
+        print("\nMenu:")
+        print("1. Tambah hewan")
+        print("2. Tampilkan hewan")
+        print("3. Keluar")
+        pilihan = input("Masukkan pilihan: ").strip()
+
+        if pilihan == "1":
+            try:
+                print("\nPilih jenis hewan:")
+                print("1. Singa")
+                print("2. Harimau")
+                jenis_pilihan = input("Masukkan pilihan: ").strip()
+
+                if jenis_pilihan == "1":
+                    tipe_hewan = Singa
+                elif jenis_pilihan == "2":
+                    tipe_hewan = Harimau
+                else:
+                    print("Error: Pilihan jenis hewan tidak valid.")
+                    continue
+
+                nama = input("Masukkan nama hewan: ").strip()
+                umur = int(input("Masukkan umur hewan: "))
+                hewan = tipe_hewan(nama, umur)
+
+                kebun_binatang.tambah_hewan(hewan)
+                print(f"{hewan.ambil_nama()} berhasil ditambahkan ke kebun binatang.")
+            except Exception as e:
+                print(e)
+
+        elif pilihan == "2":
+            kebun_binatang.tampilkan_hewan()
+
+        elif pilihan == "3":
+            print("Keluar dari program.")
+            break
+
+        else:
+            print("Error: Pilihan tidak valid.")
+
+if __name__ == "__main__":
+    utama()
