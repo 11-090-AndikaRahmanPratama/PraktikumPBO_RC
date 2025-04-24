@@ -1,0 +1,129 @@
+import tkinter as tk
+from tkinter import messagebox
+from tkinter import simpledialog
+from tkinter import ttk
+import json
+from datetime import datetime
+
+class NoteApp:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Aplikasi Catatan")
+        self.notes = {}
+        self.load_notes()
+
+        menubar = tk.Menu(root)
+        filemenu = tk.Menu(menubar, tearoff=0)
+        filemenu.add_command(label="Keluar", command=root.quit)
+        menubar.add_cascade(label="File", menu=filemenu)
+        helpmenu = tk.Menu(menubar, tearoff=0)
+        helpmenu.add_command(label="Tentang", command=self.show_about)
+        menubar.add_cascade(label="Bantuan", menu=helpmenu)
+        root.config(menu=menubar)
+
+        self.title_label = tk.Label(root, text="Judul Catatan:")
+        self.title_label.grid(row=0, column=0, sticky='w', padx=10, pady=5)
+        self.title_entry = tk.Entry(root, width=50)
+        self.title_entry.grid(row=0, column=1, padx=10, pady=5)
+        self.text_label = tk.Label(root, text="Isi Catatan:")
+        self.text_label.grid(row=1, column=0, sticky='w', padx=10, pady=5)
+        self.text_area = tk.Text(root, height=10, width=50)
+        self.text_area.grid(row=1, column=1, padx=10, pady=5)
+        self.add_button = tk.Button(root, text="Tambah Catatan", command=self.add_note)
+        self.add_button.grid(row=2, column=0, padx=10, pady=5)
+        self.delete_button = tk.Button(root, text="Hapus Catatan", command=self.delete_note)
+        self.delete_button.grid(row=2, column=1, padx=10, pady=5)
+        self.edit_button = tk.Button(root, text="Edit Catatan", command=self.edit_note)
+        self.edit_button.grid(row=2, column=2, padx=10, pady=5)
+        self.list_frame = tk.Frame(root)
+        self.list_frame.grid(row=3, column=0, columnspan=3, pady=10)
+        self.scrollbar = tk.Scrollbar(self.list_frame)
+        self.scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        self.listbox = tk.Listbox(self.list_frame, width=50, height=10, yscrollcommand=self.scrollbar.set)
+        self.listbox.pack(side=tk.LEFT)
+        self.listbox.bind("<<ListboxSelect>>", self.display_note)
+        self.scrollbar.config(command=self.listbox.yview)
+
+    def add_note(self):
+        title = self.title_entry.get().strip()
+        content = self.text_area.get("1.0", tk.END).strip()
+
+        if not title or not content:
+            messagebox.showerror("Error", "Judul dan isi catatan tidak boleh kosong!")
+            return
+
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        self.notes[title] = {'content': content, 'timestamp': timestamp}
+
+        self.listbox.insert(tk.END, f"{title} ({timestamp})")
+        
+        self.title_entry.delete(0, tk.END)
+        self.text_area.delete("1.0", tk.END)
+
+        self.save_notes()
+
+    def delete_note(self):
+        selected = self.listbox.curselection()
+        if not selected:
+            messagebox.showerror("Error", "Pilih catatan yang ingin dihapus!")
+            return
+
+        title = self.listbox.get(selected[0]).split(' (')[0]
+        confirm = messagebox.askyesno("Konfirmasi", f"Yakin ingin menghapus catatan '{title}'?")
+        if confirm:
+            del self.notes[title]
+            self.listbox.delete(selected[0])
+            self.text_area.delete("1.0", tk.END)
+
+            self.save_notes()
+
+    def edit_note(self):
+        selected = self.listbox.curselection()
+        if not selected:
+            messagebox.showerror("Error", "Pilih catatan yang ingin diedit!")
+            return
+
+        title = self.listbox.get(selected[0]).split(' (')[0]
+        old_content = self.notes[title]['content']
+
+        new_title = simpledialog.askstring("Edit Judul", "Masukkan judul baru:", initialvalue=title)
+        if new_title:
+            new_content = simpledialog.askstring("Edit Isi", "Masukkan isi baru:", initialvalue=old_content)
+            if new_content:
+                self.notes.pop(title)
+                timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                self.notes[new_title] = {'content': new_content, 'timestamp': timestamp}
+
+                self.listbox.delete(selected[0])
+                self.listbox.insert(tk.END, f"{new_title} ({timestamp})")
+
+                self.save_notes()
+
+    def display_note(self, event):
+        selection = self.listbox.curselection()
+        if selection:
+            title = self.listbox.get(selection[0]).split(' (')[0]
+            content = self.notes[title]['content']
+            self.text_area.delete("1.0", tk.END)
+            self.text_area.insert(tk.END, content)
+
+    def save_notes(self):
+        with open("notes.json", "w") as file:
+            json.dump(self.notes, file)
+
+    def load_notes(self):
+        try:
+            with open("notes.json", "r") as file:
+                self.notes = json.load(file)
+                for title, note in self.notes.items():
+                    self.listbox.insert(tk.END, f"{title} ({note['timestamp']})")
+        except FileNotFoundError:
+            pass
+
+    def show_about(self):
+        messagebox.showinfo("Tentang", "Aplikasi Catatan v1.0\nDibuat dengan Tkinter")
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = NoteApp(root)
+    root.mainloop()
